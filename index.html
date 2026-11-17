@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedidos 3D</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6a64;--bd:#e3e1d9;--ac:#d9531e;--acx:#fff;--ok:#2f7d4f;--warn:#a86a0c;--bad:#c0392b;--chip:#efede6;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161615;--card:#222220;--tx:#f0efe9;--mut:#a09f97;--bd:#33332f;--ac:#ff7a45;--acx:#1a1a18;--ok:#5fc08a;--warn:#e6b450;--bad:#ff7a6b;--chip:#2e2e2b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#161615;--card:#222220;--tx:#f0efe9;--mut:#a09f97;--bd:#33332f;--ac:#ff7a45;--acx:#1a1a18;--ok:#5fc08a;--warn:#e6b450;--bad:#ff7a6b;--chip:#2e2e2b;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:720px;margin:0 auto;padding:16px 14px 80px}
+h1{font-size:22px;margin:4px 0 2px}
+.sub{color:var(--mut);font-size:14px;margin:0 0 14px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:20px}
+.stat span{color:var(--mut);font-size:12px}
+.stat.bad b{color:var(--bad)}
+button{font:inherit;cursor:pointer;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;padding:8px 12px}
+button.pri{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+button.sm{padding:6px 10px;font-size:14px}
+button.danger{color:var(--bad)}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tabs button{flex:1}
+.tabs button.on{background:var(--tx);color:var(--bg);border-color:var(--tx)}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid .full{grid-column:1/-1}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:2px}
+input,select,textarea{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:9px 10px}
+textarea{min-height:56px;resize:vertical}
+.row{display:flex;gap:8px;margin-top:10px}
+.row .pri{flex:1}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
+.card.late{border-color:var(--bad)}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.top h3{margin:0;font-size:16px}
+.price{font-weight:700;white-space:nowrap}
+.meta{color:var(--mut);font-size:13px;margin:4px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.chip{background:var(--chip);border-radius:20px;padding:2px 10px;font-size:12px}
+.chip.bad{color:var(--bad);font-weight:700}
+.chip.warn{color:var(--warn);font-weight:700}
+.chip.ok{color:var(--ok);font-weight:700}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.note{font-size:13px;margin:4px 0;white-space:pre-wrap}
+.banner{background:var(--chip);border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:12px}
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+details summary{cursor:pointer;color:var(--mut);font-size:14px;margin:8px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Pedidos 3D</h1>
+  <p class="sub">Todo pedido se anota aquí, sin excepciones. <span id="sync"></span></p>
+  <div id="banner"></div>
+  <div class="stats" id="stats"></div>
+  <button class="pri" id="btnNuevo" style="width:100%">+ Nuevo pedido</button>
+
+  <div class="panel" id="form" hidden style="margin-top:12px">
+    <div class="grid">
+      <div class="full"><label>Cliente *</label><input id="f_cliente" placeholder="Nombre o usuario"></div>
+      <div class="full"><label>Producto *</label><input id="f_producto" placeholder="Ej. soporte de celular"></div>
+      <div><label>Color</label><input id="f_color"></div>
+      <div><label>Cantidad</label><input id="f_cant" type="number" min="1" value="1" inputmode="numeric"></div>
+      <div><label>Precio total ($)</label><input id="f_precio" type="number" min="0" inputmode="decimal"></div>
+      <div><label>Fecha de entrega</label><input id="f_fecha" type="date"></div>
+      <div><label>Canal</label>
+        <select id="f_canal"><option>Facebook Marketplace</option><option>Grupo de Facebook</option><option>Mercado Libre</option><option>TikTok Shop</option><option>WhatsApp / directo</option><option>Otro</option></select></div>
+      <div><label>Responsable</label><select id="f_resp"></select></div>
+      <div class="full"><label>Notas</label><textarea id="f_notas" placeholder="Medidas, nombre a grabar, dirección de entrega…"></textarea></div>
+    </div>
+    <div class="row"><button class="pri" id="btnGuardar">Guardar pedido</button><button id="btnCancelar">Cancelar</button></div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-f="activos" class="on">Activos</button>
+    <button data-f="entregados">Entregados</button>
+    <button data-f="todos">Todos</button>
+  </div>
+  <div id="lista"></div>
+
+  <details id="cfgBox">
+    <summary>Conexión con Google Sheets</summary>
+    <div class="panel">
+      <div class="grid">
+        <div class="full"><label>Dirección de la aplicación web (termina en /exec)</label><input id="c_url" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocorrect="off"></div>
+        <div class="full"><label>Clave (la misma que pusiste en el script)</label><input id="c_key" autocapitalize="off" autocorrect="off"></div>
+      </div>
+      <div class="row"><button class="pri" id="btnCfg">Guardar y probar</button></div>
+    </div>
+  </details>
+  <details>
+    <summary>Nombres del equipo</summary>
+    <div class="panel"><div class="grid">
+      <div><label>Persona 1</label><input id="n_a"></div>
+      <div><label>Persona 2</label><input id="n_b"></div>
+    </div><div class="row"><button class="pri" id="btnEquipo">Guardar nombres</button></div></div>
+  </details>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ESTADOS=["Pendiente","Imprimiendo","Listo","Entregado"];
+let pedidos=[],equipo={a:"Persona 1",b:"Persona 2"},filtro="activos",col=null,cfgDoc=null,editId=null,confirmDel=null,loaded=false;
+const money=n=>"$"+(Number(n)||0).toLocaleString("es-MX",{maximumFractionDigits:2});
+function hoy(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dias(f){if(!f)return null;return Math.round((new Date(f+"T00:00:00")-new Date(hoy()+"T00:00:00"))/864e5)}
+function lsGet(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function msg(t){$("#banner").innerHTML=t?'<div class="banner">'+t+'</div>':""}
+
+let cfg=lsGet("p3d_cfg",null),ocupado=false;
+async function api(body){
+  const r=body?await fetch(cfg.url,{method:"POST",body:JSON.stringify(Object.assign({k:cfg.k},body))})
+              :await fetch(cfg.url+"?k="+encodeURIComponent(cfg.k));
+  const j=await r.json();
+  if(j.error)throw new Error(j.error);
+  return j;
+}
+function aplicar(j){pedidos=j.pedidos||[];equipo=j.equipo||equipo;lsSet("p3d",pedidos);lsSet("p3d_team",equipo);loaded=true;render()}
+async function enviar(body){
+  if(!cfg)throw new Error("config");
+  ocupado=true;
+  try{aplicar(await api(body));msg("")}finally{ocupado=false}
+}
+const nid=()=>"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const addP=d=>enviar({op:"add",p:Object.assign({id:nid(),mod:Date.now()},d)});
+const updP=(id,p)=>enviar({op:"upd",id,p:Object.assign({},p,{mod:Date.now()})});
+const delP=id=>enviar({op:"del",id});
+const saveEquipo=t=>enviar({op:"team",a:t.a,b:t.b});
+async function refrescar(){
+  if(!cfg||ocupado)return;
+  try{aplicar(await api());$("#sync").textContent="Sincronizado "+new Date().toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}
+  catch(e){$("#sync").textContent="Sin conexión: mostrando la última copia"}
+}
+
+function stats(){
+  const act=pedidos.filter(p=>p.estado!=="Entregado");
+  const late=act.filter(p=>{const d=dias(p.fecha);return d!==null&&d<0});
+  const porCobrar=pedidos.filter(p=>!p.pagado).reduce((s,p)=>s+(Number(p.precio)||0),0);
+  const mes=hoy().slice(0,7);
+  const cobrado=pedidos.filter(p=>p.pagado&&(p.pagadoEn||"").slice(0,7)===mes).reduce((s,p)=>s+(Number(p.precio)||0),0);
+  $("#stats").innerHTML=
+   '<div class="stat"><b>'+act.length+'</b><span>Pedidos activos</span></div>'+
+   '<div class="stat'+(late.length?' bad':'')+'"><b>'+late.length+'</b><span>Atrasados</span></div>'+
+   '<div class="stat"><b>'+money(porCobrar)+'</b><span>Por cobrar</span></div>'+
+   '<div class="stat"><b>'+money(cobrado)+'</b><span>Cobrado este mes</span></div>';
+}
+function badge(p){
+  if(p.estado==="Entregado")return"";
+  const d=dias(p.fecha);if(d===null)return'<span class="chip">Sin fecha</span>';
+  if(d<0)return'<span class="chip bad">Atrasado '+(-d)+' d</span>';
+  if(d===0)return'<span class="chip warn">Entrega hoy</span>';
+  if(d===1)return'<span class="chip warn">Entrega mañana</span>';
+  return'<span class="chip">En '+d+' días</span>';
+}
+function card(p){
+  const i=ESTADOS.indexOf(p.estado),sig=ESTADOS[i+1];
+  const d=dias(p.fecha),late=p.estado!=="Entregado"&&d!==null&&d<0;
+  const resp=p.resp==="b"?equipo.b:equipo.a;
+  let h='<div class="card'+(late?' late':'')+'"><div class="top"><h3>'+esc(p.cliente)+'</h3><span class="price">'+money(p.precio)+'</span></div>';
+  h+='<div class="meta">'+esc(p.producto)+' ×'+esc(p.cant||1)+(p.color?' · '+esc(p.color):'')+'</div>';
+  h+='<div class="chips"><span class="chip">'+esc(p.estado)+'</span>'+badge(p)+
+     '<span class="chip '+(p.pagado?'ok':'warn')+'">'+(p.pagado?'Pagado':'Sin pagar')+'</span>'+
+     '<span class="chip">'+esc(resp)+'</span><span class="chip">'+esc(p.canal||"")+'</span>'+
+     (p.fecha?'<span class="chip">'+esc(p.fecha)+'</span>':'')+'</div>';
+  if(p.notas)h+='<div class="note">'+esc(p.notas)+'</div>';
+  h+='<div class="acts">';
+  if(sig)h+='<button class="sm pri" data-a="next" data-id="'+esc(p.id)+'">→ '+sig+'</button>';
+  h+='<button class="sm" data-a="pay" data-id="'+esc(p.id)+'">'+(p.pagado?'Quitar pago':'Marcar pagado')+'</button>';
+  h+='<button class="sm" data-a="edit" data-id="'+esc(p.id)+'">Editar</button>';
+  h+=confirmDel===p.id?'<button class="sm danger" data-a="del2" data-id="'+esc(p.id)+'">Confirmar borrar</button>':'<button class="sm danger" data-a="del" data-id="'+esc(p.id)+'">Borrar</button>';
+  return h+'</div></div>';
+}
+function render(){
+  stats();
+  const rv=$("#f_resp").value||"a";
+  $("#f_resp").innerHTML='<option value="a">'+esc(equipo.a)+'</option><option value="b">'+esc(equipo.b)+'</option>';
+  $("#f_resp").value=rv;
+  if(document.activeElement!==$("#n_a"))$("#n_a").value=equipo.a;
+  if(document.activeElement!==$("#n_b"))$("#n_b").value=equipo.b;
+  if(editId){const p=pedidos.find(x=>x.id===editId);if(p&&!$("#form").dataset.filled){fill(p);$("#form").dataset.filled="1"}}
+  let l=pedidos.slice();
+  if(filtro==="activos")l=l.filter(p=>p.estado!=="Entregado");
+  if(filtro==="entregados")l=l.filter(p=>p.estado==="Entregado");
+  l.sort((a,b)=>{
+    const ea=a.estado==="Entregado",eb=b.estado==="Entregado";
+    if(ea!==eb)return ea?1:-1;
+    if(!ea){const fa=a.fecha||"9999",fb=b.fecha||"9999";if(fa!==fb)return fa<fb?-1:1}
+    return(b.creado||0)-(a.creado||0);
+  });
+  $("#lista").innerHTML=l.length?l.map(card).join(""):'<div class="empty">'+(loaded?'No hay pedidos aquí todavía.':'Cargando…')+'</div>';
+  document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.f===filtro));
+}
+function fill(p){
+  $("#f_cliente").value=p.cliente||"";$("#f_producto").value=p.producto||"";$("#f_color").value=p.color||"";
+  $("#f_cant").value=p.cant||1;$("#f_precio").value=p.precio||"";$("#f_fecha").value=p.fecha||"";
+  $("#f_canal").value=p.canal||"Otro";$("#f_resp").value=p.resp||"a";$("#f_notas").value=p.notas||"";
+}
+function openForm(id){
+  editId=id||null;$("#form").hidden=false;$("#form").dataset.filled="";
+  if(id){const p=pedidos.find(x=>x.id===id);if(p){fill(p);$("#form").dataset.filled="1"}$("#btnGuardar").textContent="Guardar cambios"}
+  else{["cliente","producto","color","precio","fecha","notas"].forEach(k=>$("#f_"+k).value="");$("#f_cant").value=1;$("#btnGuardar").textContent="Guardar pedido"}
+  $("#form").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeForm(){$("#form").hidden=true;editId=null}
+
+$("#btnNuevo").onclick=()=>openForm();
+$("#btnCancelar").onclick=closeForm;
+$("#btnGuardar").onclick=async()=>{
+  const cliente=$("#f_cliente").value.trim(),producto=$("#f_producto").value.trim();
+  if(!cliente||!producto){msg("Faltan el cliente y el producto.");return}
+  msg("");
+  const d={cliente,producto,color:$("#f_color").value.trim(),cant:Number($("#f_cant").value)||1,precio:Number($("#f_precio").value)||0,
+    fecha:$("#f_fecha").value,canal:$("#f_canal").value,resp:$("#f_resp").value,notas:$("#f_notas").value.trim()};
+  try{
+    if(editId)await updP(editId,d);
+    else await addP(Object.assign(d,{estado:"Pendiente",pagado:false,creado:Date.now()}));
+    closeForm();
+  }catch(e){msg("No se pudo guardar. Revisa tu conexión e inténtalo otra vez.")}
+};
+$("#btnEquipo").onclick=async()=>{
+  try{await saveEquipo({a:$("#n_a").value.trim()||"Persona 1",b:$("#n_b").value.trim()||"Persona 2"})}catch(e){msg("No se pudieron guardar los nombres.")}
+};
+$("#tabs").onclick=e=>{const f=e.target.dataset.f;if(f){filtro=f;render()}};
+$("#lista").onclick=async e=>{
+  const b=e.target.closest("button[data-a]");if(!b)return;
+  const id=b.dataset.id,p=pedidos.find(x=>x.id===id),a=b.dataset.a;
+  try{
+    if(a==="next"&&p){const n=ESTADOS[ESTADOS.indexOf(p.estado)+1];if(n)await updP(id,{estado:n})}
+    else if(a==="pay"&&p)await updP(id,{pagado:!p.pagado,pagadoEn:!p.pagado?hoy():""});
+    else if(a==="edit")openForm(id);
+    else if(a==="del"){confirmDel=id;render()}
+    else if(a==="del2"){confirmDel=null;await delP(id)}
+  }catch(err){msg("No se pudo completar la acción.")}
+};
+
+pedidos=lsGet("p3d",[]);equipo=lsGet("p3d_team",equipo);
+$("#c_url").value=cfg?cfg.url:"";$("#c_key").value=cfg?cfg.k:"";
+$("#btnCfg").onclick=async()=>{
+  const url=$("#c_url").value.trim(),k=$("#c_key").value.trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)){msg("La dirección debe terminar en /exec y empezar con https://script.google.com/macros/s/");return}
+  const prev=cfg;cfg={url,k};
+  try{
+    aplicar(await api());lsSet("p3d_cfg",cfg);msg("Conectado a tu hoja de Google.");
+    $("#sync").textContent="Sincronizado";$("#cfgBox").open=false;
+  }catch(e){
+    cfg=prev;
+    msg(e.message==="clave"?"La clave no coincide con la del script.":"No se pudo conectar. Revisa la dirección y que el acceso sea “Cualquier persona”.");
+  }
+};
+if(!cfg){loaded=true;$("#cfgBox").open=true;msg("Primero conecta la app con tu hoja de Google (abajo, en “Conexión con Google Sheets”).")}
+render();
+refrescar();
+setInterval(()=>{if(document.visibilityState==="visible"&&$("#form").hidden)refrescar()},20000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&$("#form").hidden)refrescar()});
+</script>
+</body>
+</html>
